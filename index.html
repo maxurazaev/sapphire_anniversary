@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Юбилейный квиз</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Raleway:wght@200;300;400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --black: #0a0a0a; --white: #f5f5f3; --grey: #888; }
+  body { background: var(--black); color: var(--white); font-family: 'Raleway', sans-serif; font-weight: 300; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+
+  .stage { position: relative; z-index: 1; width: 100%; max-width: 520px; padding: 40px 24px; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; }
+
+  /* INTRO */
+  #screen-intro { text-align: center; animation: fadeIn 1.2s ease both; }
+  .intro-label { font-weight: 200; font-size: 10px; letter-spacing: 4px; text-transform: uppercase; color: var(--grey); margin-bottom: 48px; }
+  .intro-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(38px,10vw,56px); font-weight: 300; line-height: 1.1; margin-bottom: 24px; }
+  .intro-sub { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 18px; color: var(--grey); margin-bottom: 60px; line-height: 1.6; }
+
+  /* BUTTONS */
+  .btn { display: inline-block; padding: 14px 48px; border: 1px solid rgba(255,255,255,0.25); background: transparent; color: var(--white); font-family: 'Raleway', sans-serif; font-weight: 300; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; cursor: pointer; transition: all 0.4s ease; position: relative; overflow: hidden; }
+  .btn::after { content:''; position:absolute; inset:0; background:var(--white); transform:translateX(-101%); transition:transform 0.4s ease; z-index:-1; }
+  .btn:hover { color: var(--black); border-color: var(--white); }
+  .btn:hover::after { transform: translateX(0); }
+
+  /* QUESTION */
+  #screen-question { display: none; }
+  .q-header { display: flex; align-items: center; gap: 16px; margin-bottom: 56px; }
+  .q-number { font-family:'Cormorant Garamond',serif; font-size:72px; font-weight:300; color:rgba(255,255,255,0.06); line-height:1; user-select:none; }
+  .q-progress-wrap { flex: 1; }
+  .q-progress-label { font-size:9px; letter-spacing:3px; text-transform:uppercase; color:var(--grey); margin-bottom:8px; }
+  .q-progress-bar { height:1px; background:rgba(255,255,255,0.1); position:relative; overflow:hidden; }
+  .q-progress-fill { position:absolute; left:0; top:0; bottom:0; background:var(--white); transition:width 0.6s ease; }
+  .q-text { font-family:'Cormorant Garamond',serif; font-size:clamp(22px,5vw,30px); font-weight:300; line-height:1.4; margin-bottom:40px; }
+  .q-hint { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--grey); margin-bottom:16px; }
+  .q-input { width:100%; background:transparent; border:none; border-bottom:1px solid rgba(255,255,255,0.2); color:var(--white); font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:300; padding:12px 0; outline:none; transition:border-color 0.3s ease; caret-color:var(--white); }
+  .q-input::placeholder { color:rgba(255,255,255,0.15); }
+  .q-input:focus { border-bottom-color:rgba(255,255,255,0.6); }
+  .q-input.shake { animation:shake 0.4s ease; border-bottom-color:#c0392b !important; }
+  .q-error { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#c0392b; margin-top:12px; min-height:16px; opacity:0; transition:opacity 0.3s; }
+  .q-error.show { opacity:1; }
+
+  /* CERTIFICATE */
+  #screen-cert { display: none; animation: fadeIn 1.4s ease both; }
+  .cert-congrats { text-align:center; font-family:'Cormorant Garamond',serif; font-style:italic; font-size:15px; color:var(--grey); margin-bottom:32px; letter-spacing:1px; }
+
+  .cert-wrap { border:1px solid rgba(255,255,255,0.12); position:relative; background:linear-gradient(160deg,#111 0%,#0a0a0a 100%); overflow:hidden; padding: 48px 36px 40px; }
+  .cert-wrap::before,.cert-wrap::after { content:''; position:absolute; width:20px; height:20px; border-color:rgba(255,255,255,0.4); border-style:solid; z-index:2; pointer-events:none; }
+  .cert-wrap::before { top:-1px;left:-1px;border-width:1px 0 0 1px; }
+  .cert-wrap::after { bottom:-1px;right:-1px;border-width:0 1px 1px 0; }
+  .cert-corner-br::before,.cert-corner-br::after { content:''; position:absolute; width:20px; height:20px; border-color:rgba(255,255,255,0.4); border-style:solid; z-index:2; pointer-events:none; }
+  .cert-corner-br::before { top:-1px;right:-1px;border-width:1px 1px 0 0; }
+  .cert-corner-br::after { bottom:-1px;left:-1px;border-width:0 0 1px 1px; }
+
+  .cert-label { font-size:9px; letter-spacing:4px; text-transform:uppercase; color:var(--grey); margin-bottom:28px; }
+  .cert-title { font-family:'Cormorant Garamond',serif; font-size:clamp(28px,7vw,42px); font-weight:300; line-height:1.15; margin-bottom:14px; }
+  .cert-tagline { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:17px; color:var(--grey); margin-bottom:32px; line-height:1.6; }
+  .cert-divider { height:1px; background:rgba(255,255,255,0.1); margin:28px 0; }
+  .cert-info { display:flex; flex-direction:column; gap:18px; }
+  .cert-row { display:flex; align-items:flex-start; gap:16px; }
+  .cert-icon { width:18px; flex-shrink:0; margin-top:2px; opacity:0.5; }
+  .cert-info-label { font-size:9px; letter-spacing:3px; text-transform:uppercase; color:var(--grey); margin-bottom:3px; }
+  .cert-info-value { font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:300; line-height:1.4; }
+  .cert-links-label { font-size:9px; letter-spacing:3px; text-transform:uppercase; color:var(--grey); margin-bottom:14px; }
+  .cert-links { display:flex; flex-direction:column; }
+  .cert-link { display:flex; align-items:center; gap:10px; color:rgba(255,255,255,0.55); text-decoration:none; font-size:12px; letter-spacing:1.5px; text-transform:uppercase; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.07); transition:color 0.3s; }
+  .cert-link:hover { color:var(--white); }
+  .cert-link-icon { opacity:0.4; display:flex; align-items:center; }
+  .cert-link-arrow { margin-left:auto; font-size:14px; opacity:0.4; }
+  .cert-link:hover .cert-link-arrow { opacity:1; }
+  .download-wrap { margin-top:32px; text-align:center; }
+
+  /* PRINT */
+  @media print {
+    body > .stage { display: none !important; }
+    #print-page {
+      display: block !important;
+      position: fixed; inset: 0;
+      background: #000 !important;
+      color: #f5f5f3 !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+  }
+  #print-page { display: none; }
+  .pp { font-family: 'Raleway', sans-serif; max-width: 480px; margin: 0 auto; padding: 48px 24px; }
+  .pp-top { text-align:center; font-family:'Cormorant Garamond',serif; font-style:italic; font-size:13px; color:#888; margin-bottom:24px; letter-spacing:1px; }
+  .pp-box { border:1px solid rgba(255,255,255,0.2); background:#111; padding:44px 36px 40px; position:relative; }
+  .pp-label { font-size:8px; letter-spacing:4px; text-transform:uppercase; color:#888; margin-bottom:24px; }
+  .pp-title { font-family:'Cormorant Garamond',serif; font-size:32px; font-weight:300; line-height:1.15; margin-bottom:12px; color:#f5f5f3; }
+  .pp-tagline { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:15px; color:#888; margin-bottom:28px; line-height:1.6; }
+  .pp-hr { border:none; border-top:1px solid rgba(255,255,255,0.12); margin:20px 0; }
+  .pp-row { display:flex; gap:10px; margin-bottom:10px; }
+  .pp-il { font-size:8px; letter-spacing:2px; text-transform:uppercase; color:#888; margin-bottom:2px; }
+  .pp-iv { font-family:'Cormorant Garamond',serif; font-size:16px; color:#f5f5f3; line-height:1.4; }
+  .pp-foot { text-align:center; font-size:8px; letter-spacing:3px; text-transform:uppercase; color:#888; }
+
+  .correct-flash { position:fixed; inset:0; background:white; opacity:0; pointer-events:none; z-index:999; transition:opacity 0.15s ease; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
+  .fade-enter { animation: fadeIn 0.7s ease both; }
+</style>
+</head>
+<body>
+
+<div class="correct-flash" id="flash"></div>
+
+<!-- Скрытая страница для печати -->
+<div id="print-page">
+  <div class="pp">
+    <p class="pp-top">✦ &nbsp; Подарочный сертификат &nbsp; ✦</p>
+    <div class="pp-box">
+      <div class="pp-title">Фотосессия<br>у арт-фотографа<br>Игоря Панкова</div>
+      <div class="pp-tagline">Увидеть себя глазами художника</div>
+      <div class="pp-hr"></div>
+      <div class="pp-row"><div><div class="pp-il">Дата</div><div class="pp-iv">16 мая</div></div></div>
+      <div class="pp-row"><div><div class="pp-il">Время</div><div class="pp-iv">18.30 – 19.30</div></div></div>
+      <div class="pp-row"><div><div class="pp-il">Место</div><div class="pp-iv">Щипок, 28, Kaps Studios, зал 1</div></div></div>
+      <div class="pp-row"><div><div class="pp-il">Контакт</div><div class="pp-iv">8-916-657-6669 · Игорь</div></div></div>
+      <div class="pp-hr"></div>
+      <div class="pp-foot">igor-pankov.com</div>
+    </div>
+  </div>
+</div>
+
+<!-- Квиз -->
+<div class="stage">
+
+  <div id="screen-intro">
+    <p class="intro-label" style="margin-bottom:24px">Для вас</p>
+    <p class="intro-label" style="font-size:20px">Алла и Марат</p>
+    <h1 class="intro-title">Юбилейный квиз</h1>
+    <p class="intro-sub">Ответьте на три вопроса правильно —<br>и вас ждёт сюрприз!</p>
+    <button class="btn" onclick="startQuiz()">Начать</button>
+  </div>
+
+  <div id="screen-question">
+    <div class="q-header">
+      <div class="q-number" id="q-num">01</div>
+      <div class="q-progress-wrap">
+        <div class="q-progress-label">Вопрос <span id="q-counter">1</span> из 3</div>
+        <div class="q-progress-bar"><div class="q-progress-fill" id="q-bar" style="width:33%"></div></div>
+      </div>
+    </div>
+    <p class="q-text" id="q-text"></p>
+    <p class="q-hint">Ваш ответ</p>
+    <input class="q-input" id="q-input" type="text" placeholder="—" autocomplete="off" spellcheck="false">
+    <div class="q-error" id="q-error">Не совсем верно. Попробуйте ещё раз</div>
+    <br>
+    <button class="btn" style="margin-top:40px" onclick="checkAnswer()">Проверить</button>
+  </div>
+
+  <div id="screen-cert">
+    <p class="cert-congrats">✦ &nbsp; Поздравляем! Вы справились &nbsp; ✦</p>
+    <div class="cert-wrap cert-corner-br">
+      <h2 class="cert-title">Фотосессия<br>у арт-фотографа<br>Игоря Панкова</h2>
+      <p class="cert-tagline">Увидеть себя<br>глазами художника</p>
+      <div class="cert-divider"></div>
+      <div class="cert-info">
+        <div class="cert-row">
+          <svg class="cert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <div><div class="cert-info-label">Дата</div><div class="cert-info-value">16 мая</div></div>
+        </div>
+        <div class="cert-row">
+          <svg class="cert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+          <div><div class="cert-info-label">Время</div><div class="cert-info-value">18.30 – 19.30</div></div>
+        </div>
+        <div class="cert-row">
+          <svg class="cert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+          <div><div class="cert-info-label">Место встречи</div><div class="cert-info-value">Щипок, 28,<br>Kaps Studios, зал 1</div></div>
+        </div>
+        <div class="cert-row">
+          <svg class="cert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18" stroke-width="2" stroke-linecap="round"/></svg>
+          <div><div class="cert-info-label">Контакт</div><div class="cert-info-value">8-916-657-6669<br>Игорь</div></div>
+        </div>
+      </div>
+      <div class="cert-divider"></div>
+      <p class="cert-links-label">Работы художника</p>
+      <div class="cert-links">
+        <a class="cert-link" href="https://www.igor-pankov.com/ru/portretii" target="_blank">
+          <span class="cert-link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" width="13" height="13"><rect x="3" y="3" width="18" height="18" rx="1"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span>
+          Портреты<span class="cert-link-arrow">↗</span>
+        </a>
+        <a class="cert-link" href="https://www.igor-pankov.com/ru/project/zhivi-kak-v-kino" target="_blank">
+          <span class="cert-link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" width="13" height="13"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></span>
+          Живи как в кино<span class="cert-link-arrow">↗</span>
+        </a>
+      </div>
+      <div class="download-wrap">
+        <button class="btn" onclick="downloadForPDF()">↓ &nbsp; Скачать для печати в PDF</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const questions = [
+  { text:"Плотность материала, в честь которого назван ваш юбилей", variants:["3.93","3,93","3.9","3,9"] },
+  { text:"Сколько всего букв А в ваших полных именах?", variants:["13","тринадцать"] },
+  { text:"Название улицы из подарочного сертификата 2025", variants:["пчеловодов","ул. пчеловодов","улица пчеловодов","пчеловоды"] }
+];
+let current = 0;
+
+function showScreen(id) {
+  ['screen-intro','screen-question','screen-cert'].forEach(s => {
+    document.getElementById(s).style.display = 'none';
+  });
+  const el = document.getElementById(id);
+  el.style.display = 'block';
+  el.classList.remove('fade-enter');
+  void el.offsetWidth;
+  el.classList.add('fade-enter');
+}
+
+function startQuiz() { current = 0; loadQuestion(); showScreen('screen-question'); }
+
+function loadQuestion() {
+  document.getElementById('q-num').textContent = String(current+1).padStart(2,'0');
+  document.getElementById('q-counter').textContent = current+1;
+  document.getElementById('q-bar').style.width = ((current+1)/3*100)+'%';
+  document.getElementById('q-text').textContent = questions[current].text;
+  document.getElementById('q-input').value = '';
+  document.getElementById('q-error').classList.remove('show');
+  setTimeout(() => document.getElementById('q-input').focus(), 300);
+}
+
+function normalize(s) { return s.trim().toLowerCase().replace(/\s+/g,' '); }
+
+function checkAnswer() {
+  const input = document.getElementById('q-input');
+  const val = normalize(input.value);
+  const correct = questions[current].variants.some(v => normalize(v) === val);
+  if (correct) {
+    const flash = document.getElementById('flash');
+    flash.style.opacity = '0.15';
+    setTimeout(() => flash.style.opacity = '0', 200);
+    current++;
+    if (current >= questions.length) {
+      setTimeout(() => showScreen('screen-cert'), 400);
+    } else {
+      setTimeout(() => {
+        loadQuestion();
+        const el = document.getElementById('screen-question');
+        el.classList.remove('fade-enter'); void el.offsetWidth; el.classList.add('fade-enter');
+      }, 350);
+    }
+  } else {
+    input.classList.remove('shake'); void input.offsetWidth; input.classList.add('shake');
+    document.getElementById('q-error').classList.add('show');
+    setTimeout(() => input.classList.remove('shake'), 500);
+  }
+}
+
+function downloadForPDF() {
+  const html = `<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Сертификат — Игорь Панков</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;1,300&family=Raleway:wght@200;300&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:#0a0a0a; color:#f5f5f3; font-family:'Raleway',sans-serif; font-weight:300; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:40px 20px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .wrap { max-width:460px; width:100%; }
+  .top { text-align:center; font-family:'Cormorant Garamond',serif; font-style:italic; font-size:13px; color:#888; margin-bottom:24px; letter-spacing:1px; }
+  .box { border:1px solid rgba(255,255,255,0.2); background:#111; padding:44px 36px 40px; position:relative; }
+  .box::before,.box::after { content:''; position:absolute; width:18px; height:18px; border-color:rgba(255,255,255,0.4); border-style:solid; }
+  .box::before { top:-1px;left:-1px;border-width:1px 0 0 1px; }
+  .box::after { bottom:-1px;right:-1px;border-width:0 1px 1px 0; }
+  h1 { font-family:'Cormorant Garamond',serif; font-size:32px; font-weight:300; line-height:1.15; margin-bottom:12px; }
+  .tag { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:15px; color:#888; margin-bottom:28px; line-height:1.6; }
+  hr { border:none; border-top:1px solid rgba(255,255,255,0.12); margin:20px 0; }
+  .row { display:flex; gap:10px; margin-bottom:10px; }
+  .il { font-size:8px; letter-spacing:2px; text-transform:uppercase; color:#888; margin-bottom:2px; }
+  .iv { font-family:'Cormorant Garamond',serif; font-size:16px; line-height:1.4; }
+  .links { display:flex; flex-direction:column; }
+  .lnk { display:flex; align-items:center; justify-content:space-between; color:rgba(255,255,255,0.55); text-decoration:none; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; padding:9px 0; border-bottom:1px solid rgba(255,255,255,0.07); }
+  .foot { text-align:center; font-size:8px; letter-spacing:3px; text-transform:uppercase; color:#888; margin-top:4px; }
+  .hint { text-align:center; margin-top:28px; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#555; }
+  .hint span { display:inline-block; margin-top:8px; border:1px solid rgba(255,255,255,0.2); padding:11px 32px; color:#f5f5f3; font-size:10px; cursor:pointer; }
+  @media print { .hint { display:none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="top">✦ &nbsp; Подарочный сертификат &nbsp; ✦</p>
+  <div class="box">
+    <h1>Фотосессия<br>у арт-фотографа<br>Игоря Панкова</h1>
+    <p class="tag">Увидеть себя глазами художника</p>
+    <hr>
+    <div class="row"><div><div class="il">Дата</div><div class="iv">16 мая</div></div></div>
+    <div class="row"><div><div class="il">Время</div><div class="iv">18.30 – 19.30</div></div></div>
+    <div class="row"><div><div class="il">Место</div><div class="iv">Щипок, 28, Kaps Studios, зал 1</div></div></div>
+    <div class="row"><div><div class="il">Контакт</div><div class="iv">8-916-657-6669 · Игорь</div></div></div>
+    <hr>
+    <div class="links">
+      <a class="lnk" href="https://www.igor-pankov.com/ru/portretii">Портреты <span>↗</span></a>
+      <a class="lnk" href="https://www.igor-pankov.com/ru/project/zhivi-kak-v-kino">Живи как в кино <span>↗</span></a>
+    </div>
+    <hr>
+    <div class="foot">igor-pankov.com</div>
+  </div>
+  <div class="hint">
+    Для сохранения в PDF нажмите:<br>
+    <span onclick="window.print()">Ctrl+P → Сохранить как PDF</span>
+  </div>
+</div>
+</body>
+</html>`;
+
+  const blob = new Blob([html], {type:'text/html;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'сертификат-панков.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key==='Enter' && document.getElementById('screen-question').style.display!=='none') checkAnswer();
+});
+</script>
+</body>
+</html>
